@@ -1,0 +1,11 @@
+.git
+.github
+bin
+tmp
+logs
+coverage.out
+*.md
+.env
+.env.local
+.idea
+.vscode

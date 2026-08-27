@@ -1,1 +1,21 @@
+# Binary
+/bin
+/tmp
+/dist
+/coverage.out
+/coverage.html
+
+# Logs
 /logs
+
+# Env and secrets
+.env
+.env.local
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# OS
+.DS_Store

@@ -5,17 +5,58 @@ app:
 server:
   host: 0.0.0.0
   port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 15s
+  max_body_bytes: 1048576
 
 database:
   host: localhost
   port: 5432
   name: gin-api
-  username: root
-  password: root
+  username: postgres
+  password: postgres
+  sslmode: disable
+  max_open_conns: 25
+  max_idle_conns: 10
+  conn_max_lifetime: 1h
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+
+jwt:
+  access_secret: change-me-access
+  refresh_secret: change-me-refresh
+  access_ttl: 15m
+  refresh_ttl: 168h
+
+cors:
+  allow_origins:
+    - "*"
+  allow_methods:
+    - GET
+    - POST
+    - PATCH
+    - PUT
+    - DELETE
+    - OPTIONS
+  allow_headers:
+    - Origin
+    - Content-Type
+    - Authorization
+    - X-Request-ID
+  allow_credentials: false
 
 logging:
   level: info
   directory: logs
   outputs:
     - console
-    # - file
+
+metrics:
+  enabled: true
+  path: /metrics

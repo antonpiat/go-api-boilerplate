@@ -1,0 +1,235 @@
+// Package docs Gin API.
+//
+// REST API boilerplate with JWT auth, users, and RBAC.
+package docs
+
+import "github.com/swaggo/swag"
+
+const docTemplate = `{
+  "swagger": "2.0",
+  "info": {
+    "description": "Production-oriented Gin REST API boilerplate with JWT, RBAC, Postgres, and Redis.",
+    "title": "Gin API",
+    "contact": {},
+    "version": "1.0"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Liveness probe",
+        "responses": {"200": {"description": "OK"}}
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Readiness probe",
+        "responses": {
+          "200": {"description": "OK"},
+          "503": {"description": "Not ready"}
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Register a new user",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "required": true,
+          "schema": {"$ref": "#/definitions/RegisterRequest"}
+        }],
+        "responses": {
+          "201": {"description": "Created", "schema": {"$ref": "#/definitions/Envelope"}},
+          "400": {"description": "Validation error"},
+          "409": {"description": "Email taken"}
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Login",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "required": true,
+          "schema": {"$ref": "#/definitions/LoginRequest"}
+        }],
+        "responses": {
+          "200": {"description": "OK", "schema": {"$ref": "#/definitions/Envelope"}},
+          "401": {"description": "Unauthorized"}
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Rotate refresh token",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "required": true,
+          "schema": {"$ref": "#/definitions/RefreshRequest"}
+        }],
+        "responses": {
+          "200": {"description": "OK"},
+          "401": {"description": "Unauthorized"}
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Logout and revoke tokens",
+        "security": [{"BearerAuth": []}],
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "required": true,
+          "schema": {"$ref": "#/definitions/LogoutRequest"}
+        }],
+        "responses": {
+          "204": {"description": "No Content"},
+          "401": {"description": "Unauthorized"}
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Get the current user",
+        "security": [{"BearerAuth": []}],
+        "responses": {"200": {"description": "OK"}, "401": {"description": "Unauthorized"}}
+      },
+      "patch": {
+        "tags": ["users"],
+        "summary": "Update the current user",
+        "security": [{"BearerAuth": []}],
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "schema": {"$ref": "#/definitions/UpdateMeRequest"}
+        }],
+        "responses": {"200": {"description": "OK"}, "401": {"description": "Unauthorized"}}
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": ["users"],
+        "summary": "List users (admin)",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {"in": "query", "name": "page", "type": "integer"},
+          {"in": "query", "name": "per_page", "type": "integer"}
+        ],
+        "responses": {"200": {"description": "OK"}, "403": {"description": "Forbidden"}}
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Get user by id (admin)",
+        "security": [{"BearerAuth": []}],
+        "parameters": [{"in": "path", "name": "id", "required": true, "type": "string"}],
+        "responses": {"200": {"description": "OK"}, "404": {"description": "Not found"}}
+      },
+      "patch": {
+        "tags": ["users"],
+        "summary": "Update user (admin)",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {"in": "path", "name": "id", "required": true, "type": "string"},
+          {"in": "body", "name": "body", "schema": {"$ref": "#/definitions/AdminUpdateRequest"}}
+        ],
+        "responses": {"200": {"description": "OK"}}
+      },
+      "delete": {
+        "tags": ["users"],
+        "summary": "Soft-delete user (admin)",
+        "security": [{"BearerAuth": []}],
+        "parameters": [{"in": "path", "name": "id", "required": true, "type": "string"}],
+        "responses": {"204": {"description": "No Content"}}
+      }
+    }
+  },
+  "definitions": {
+    "RegisterRequest": {
+      "type": "object",
+      "required": ["email", "password"],
+      "properties": {
+        "email": {"type": "string"},
+        "password": {"type": "string", "minLength": 8}
+      }
+    },
+    "LoginRequest": {
+      "type": "object",
+      "required": ["email", "password"],
+      "properties": {
+        "email": {"type": "string"},
+        "password": {"type": "string"}
+      }
+    },
+    "RefreshRequest": {
+      "type": "object",
+      "required": ["refresh_token"],
+      "properties": {"refresh_token": {"type": "string"}}
+    },
+    "LogoutRequest": {
+      "type": "object",
+      "required": ["refresh_token"],
+      "properties": {"refresh_token": {"type": "string"}}
+    },
+    "UpdateMeRequest": {
+      "type": "object",
+      "properties": {
+        "email": {"type": "string"},
+        "password": {"type": "string"}
+      }
+    },
+    "AdminUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "email": {"type": "string"},
+        "password": {"type": "string"},
+        "role": {"type": "string", "enum": ["user", "admin"]}
+      }
+    },
+    "Envelope": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "data": {"type": "object"},
+        "meta": {"type": "object"},
+        "error": {"type": "object"}
+      }
+    }
+  },
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Bearer access token"
+    }
+  }
+}`
+
+var SwaggerInfo = &swag.Spec{
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
+	Schemes:          []string{"http"},
+	Title:            "Gin API",
+	Description:      "Production-oriented Gin REST API boilerplate with JWT, RBAC, Postgres, and Redis.",
+	InfoInstanceName: "swagger",
+	SwaggerTemplate:  docTemplate,
+}
+
+func init() {
+	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+}
