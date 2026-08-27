@@ -35,7 +35,7 @@ var (
 
 func Metrics() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "/metrics" {
+		if skipInstrumentation(c) {
 			c.Next()
 			return
 		}

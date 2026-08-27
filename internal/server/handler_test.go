@@ -55,6 +55,21 @@ func TestHealthLive(t *testing.T) {
 	rec := httptest.NewRecorder()
 	engine.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), `"success":true`)
+}
+
+func TestCompositeReadyReportsFirstError(t *testing.T) {
+	ready := server.CompositeReady{Checks: []func(context.Context) error{
+		func(context.Context) error { return nil },
+		func(context.Context) error { return errors.New("redis down") },
+	}}
+	require.EqualError(t, ready.Ready(context.Background()), "redis down")
+
+	ok := server.CompositeReady{Checks: []func(context.Context) error{
+		func(context.Context) error { return nil },
+		func(context.Context) error { return nil },
+	}}
+	require.NoError(t, ok.Ready(context.Background()))
 }
 
 func TestRootRedirectsToSwagger(t *testing.T) {

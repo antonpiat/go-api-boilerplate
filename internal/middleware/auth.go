@@ -13,6 +13,8 @@ type AccessValidator interface {
 	ValidateAccess(ctx context.Context, token string) (authctx.Principal, error)
 }
 
+const bearerPrefix = "Bearer "
+
 func JWT(validator AccessValidator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
@@ -21,14 +23,13 @@ func JWT(validator AccessValidator) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		parts := strings.SplitN(header, " ", 2)
-		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		if len(header) <= len(bearerPrefix) || !strings.EqualFold(header[:len(bearerPrefix)], bearerPrefix) {
 			httpx.Fail(c, httpx.Unauthorized("invalid authorization header"))
 			c.Abort()
 			return
 		}
 
-		principal, err := validator.ValidateAccess(c.Request.Context(), parts[1])
+		principal, err := validator.ValidateAccess(c.Request.Context(), header[len(bearerPrefix):])
 		if err != nil {
 			httpx.Fail(c, err)
 			c.Abort()

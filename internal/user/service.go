@@ -31,9 +31,9 @@ func (s *Service) List(ctx context.Context, page httpx.Pagination) ([]PublicUser
 	if err != nil {
 		return nil, 0, httpx.Internal("failed to list users", err)
 	}
-	out := make([]PublicUser, 0, len(users))
+	out := make([]PublicUser, len(users))
 	for i := range users {
-		out = append(out, users[i].ToPublic())
+		out[i] = users[i].ToPublic()
 	}
 	return out, total, nil
 }

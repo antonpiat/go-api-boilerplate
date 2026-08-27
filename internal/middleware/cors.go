@@ -12,13 +12,19 @@ func CORS(cfg config.CORSConfig) gin.HandlerFunc {
 	allowAll := len(cfg.AllowOrigins) == 1 && cfg.AllowOrigins[0] == "*"
 	methods := strings.Join(cfg.AllowMethods, ",")
 	headers := strings.Join(cfg.AllowHeaders, ",")
+	allowed := make(map[string]struct{}, len(cfg.AllowOrigins))
+	if !allowAll {
+		for _, o := range cfg.AllowOrigins {
+			allowed[o] = struct{}{}
+		}
+	}
 
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 		if origin != "" {
 			if allowAll {
 				c.Header("Access-Control-Allow-Origin", "*")
-			} else if originAllowed(origin, cfg.AllowOrigins) {
+			} else if _, ok := allowed[origin]; ok {
 				c.Header("Access-Control-Allow-Origin", origin)
 				c.Header("Vary", "Origin")
 			}
@@ -35,13 +41,4 @@ func CORS(cfg config.CORSConfig) gin.HandlerFunc {
 		}
 		c.Next()
 	}
-}
-
-func originAllowed(origin string, allowed []string) bool {
-	for _, o := range allowed {
-		if o == origin {
-			return true
-		}
-	}
-	return false
 }

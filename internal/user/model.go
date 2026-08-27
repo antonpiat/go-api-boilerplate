@@ -22,10 +22,6 @@ type User struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-func (User) TableName() string {
-	return "users"
-}
-
 type PublicUser struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`

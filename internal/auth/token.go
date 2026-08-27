@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/antonpiat/go-api-boilerplate/internal/config"
@@ -12,6 +12,13 @@ import (
 const (
 	tokenTypeAccess  = "access"
 	tokenTypeRefresh = "refresh"
+)
+
+var (
+	errInvalidToken     = errors.New("invalid token")
+	errInvalidTokenType = errors.New("invalid token type")
+	errInvalidSubject   = errors.New("invalid subject")
+	errMissingJTI       = errors.New("missing jti")
 )
 
 type jwtClaims struct {
@@ -27,16 +34,23 @@ type TokenService struct {
 	accessTTL     time.Duration
 	refreshTTL    time.Duration
 	issuer        string
+	parser        *jwt.Parser
+	accessKey     jwt.Keyfunc
+	refreshKey    jwt.Keyfunc
 }
 
 func NewTokenService(cfg config.JWTConfig, issuer string) *TokenService {
-	return &TokenService{
+	s := &TokenService{
 		accessSecret:  []byte(cfg.AccessSecret),
 		refreshSecret: []byte(cfg.RefreshSecret),
 		accessTTL:     cfg.AccessTTLDuration(),
 		refreshTTL:    cfg.RefreshTTLDuration(),
 		issuer:        issuer,
+		parser:        jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()})),
 	}
+	s.accessKey = func(*jwt.Token) (any, error) { return s.accessSecret, nil }
+	s.refreshKey = func(*jwt.Token) (any, error) { return s.refreshSecret, nil }
+	return s
 }
 
 func (s *TokenService) AccessTTL() time.Duration  { return s.accessTTL }
@@ -51,11 +65,11 @@ func (s *TokenService) IssueRefresh(userID uuid.UUID) (token string, jti string,
 }
 
 func (s *TokenService) ParseAccess(token string) (*TokenClaims, error) {
-	return s.parse(token, s.accessSecret, tokenTypeAccess)
+	return s.parse(token, s.accessKey, tokenTypeAccess)
 }
 
 func (s *TokenService) ParseRefresh(token string) (*TokenClaims, error) {
-	return s.parse(token, s.refreshSecret, tokenTypeRefresh)
+	return s.parse(token, s.refreshKey, tokenTypeRefresh)
 }
 
 func (s *TokenService) issue(secret []byte, typ string, userID uuid.UUID, email, role string, ttl time.Duration) (string, string, error) {
@@ -81,35 +95,29 @@ func (s *TokenService) issue(secret []byte, typ string, userID uuid.UUID, email,
 	return signed, jti, nil
 }
 
-func (s *TokenService) parse(tokenString string, secret []byte, expectedType string) (*TokenClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwtClaims{}, func(t *jwt.Token) (any, error) {
-		if t.Method != jwt.SigningMethodHS256 {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return secret, nil
-	})
+func (s *TokenService) parse(tokenString string, key jwt.Keyfunc, expectedType string) (*TokenClaims, error) {
+	token, err := s.parser.ParseWithClaims(tokenString, &jwtClaims{}, key)
 	if err != nil {
 		return nil, err
 	}
 	claims, ok := token.Claims.(*jwtClaims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("invalid token")
+		return nil, errInvalidToken
 	}
 	if claims.Typ != expectedType {
-		return nil, fmt.Errorf("invalid token type")
+		return nil, errInvalidTokenType
 	}
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return nil, fmt.Errorf("invalid subject")
+		return nil, errInvalidSubject
 	}
 	if claims.ID == "" {
-		return nil, fmt.Errorf("missing jti")
+		return nil, errMissingJTI
 	}
 	return &TokenClaims{
 		UserID: userID,
 		Email:  claims.Email,
 		Role:   claims.Role,
 		JTI:    claims.ID,
-		Typ:    claims.Typ,
 	}, nil
 }

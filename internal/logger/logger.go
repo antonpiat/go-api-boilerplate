@@ -78,7 +78,6 @@ func newConsoleEncoder(dev bool) zapcore.Encoder {
 		LineEnding:     zapcore.DefaultLineEnding,
 		EncodeTime:     zapcore.TimeEncoderOfLayout("15:04:05"),
 		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 	if dev {
 		cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder

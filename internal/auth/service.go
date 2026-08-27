@@ -29,8 +29,12 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*TokenPair
 		return nil, httpx.Internal("failed to hash password", err)
 	}
 
+	id, err := uuid.NewV7()
+	if err != nil {
+		id = uuid.New()
+	}
 	u := &user.User{
-		ID:           uuid.New(),
+		ID:           id,
 		Email:        email,
 		PasswordHash: hash,
 		Role:         user.RoleUser,

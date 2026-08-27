@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/antonpiat/go-api-boilerplate/internal/auth"
 	"github.com/antonpiat/go-api-boilerplate/internal/config"
@@ -82,11 +83,16 @@ func New(deps Dependencies) *gin.Engine {
 }
 
 func NewHTTPServer(cfg *config.Config, handler http.Handler) *http.Server {
+	headerTimeout := 5 * time.Second
+	if rt := cfg.Server.ReadTimeoutDuration(); rt > 0 && rt < headerTimeout {
+		headerTimeout = rt
+	}
 	return &http.Server{
-		Addr:         cfg.Server.Addr(),
-		Handler:      handler,
-		ReadTimeout:  cfg.Server.ReadTimeoutDuration(),
-		WriteTimeout: cfg.Server.WriteTimeoutDuration(),
-		IdleTimeout:  cfg.Server.IdleTimeoutDuration(),
+		Addr:              cfg.Server.Addr(),
+		Handler:           handler,
+		ReadHeaderTimeout: headerTimeout,
+		ReadTimeout:       cfg.Server.ReadTimeoutDuration(),
+		WriteTimeout:      cfg.Server.WriteTimeoutDuration(),
+		IdleTimeout:       cfg.Server.IdleTimeoutDuration(),
 	}
 }

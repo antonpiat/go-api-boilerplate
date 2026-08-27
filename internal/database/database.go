@@ -18,7 +18,9 @@ func New(ctx context.Context, cfg config.DatabaseConfig) (*gorm.DB, error) {
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
-		TranslateError: true,
+		PrepareStmt:            true,
+		SkipDefaultTransaction: true,
+		TranslateError:         true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("open postgres: %w", err)

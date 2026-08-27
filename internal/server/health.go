@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const jsonContentType = "application/json; charset=utf-8"
+
+var liveOKBody = []byte(`{"success":true,"data":{"status":"ok"}}`)
+
 type ReadyChecker interface {
 	Ready(ctx context.Context) error
 }
@@ -21,12 +25,12 @@ func NewHealthHandler(ready ReadyChecker) *HealthHandler {
 }
 
 func (h *HealthHandler) Live(c *gin.Context) {
-	httpx.OK(c, gin.H{"status": "ok"})
+	c.Data(http.StatusOK, jsonContentType, liveOKBody)
 }
 
 func (h *HealthHandler) Ready(c *gin.Context) {
 	if h.ready == nil {
-		httpx.OK(c, gin.H{"status": "ok"})
+		c.Data(http.StatusOK, jsonContentType, liveOKBody)
 		return
 	}
 	if err := h.ready.Ready(c.Request.Context()); err != nil {
@@ -39,7 +43,7 @@ func (h *HealthHandler) Ready(c *gin.Context) {
 		})
 		return
 	}
-	httpx.OK(c, gin.H{"status": "ok"})
+	c.Data(http.StatusOK, jsonContentType, liveOKBody)
 }
 
 type CompositeReady struct {
@@ -47,10 +51,26 @@ type CompositeReady struct {
 }
 
 func (c CompositeReady) Ready(ctx context.Context) error {
+	n := len(c.Checks)
+	switch n {
+	case 0:
+		return nil
+	case 1:
+		return c.Checks[0](ctx)
+	}
+
+	errCh := make(chan error, n)
 	for _, check := range c.Checks {
-		if err := check(ctx); err != nil {
-			return err
+		go func(fn func(context.Context) error) {
+			errCh <- fn(ctx)
+		}(check)
+	}
+
+	var first error
+	for i := 0; i < n; i++ {
+		if err := <-errCh; err != nil && first == nil {
+			first = err
 		}
 	}
-	return nil
+	return first
 }
