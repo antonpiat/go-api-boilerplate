@@ -28,10 +28,8 @@ type Dependencies struct {
 
 func New(deps Dependencies) *gin.Engine {
 	cfg := deps.Config
-	if cfg.App.IsProduction() {
+	if gin.Mode() != gin.TestMode {
 		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
 	}
 
 	r := gin.New()

@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    attach: false
     environment:
       POSTGRES_DB: gin-api
       POSTGRES_USER: postgres
@@ -9,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    command: ["postgres", "-c", "log_min_messages=warning"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gin-api"]
       interval: 5s
@@ -17,6 +19,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    attach: false
+    command: ["redis-server", "--loglevel", "warning"]
     ports:
       - "6379:6379"
     healthcheck:
@@ -27,6 +31,7 @@ services:
 
   migrate:
     image: migrate/migrate:v4.18.3
+    attach: false
     volumes:
       - ./migrations:/migrations:ro
     command:
@@ -69,10 +74,14 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.55.1
+    attach: false
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--log.level=warn"
     depends_on:
       - api
 

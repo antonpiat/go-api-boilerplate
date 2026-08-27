@@ -39,11 +39,7 @@ func run() error {
 	}
 	defer func() { _ = log.Sync() }()
 
-	log.Info("starting server",
-		zap.String("app", cfg.App.Name),
-		zap.String("env", cfg.App.Environment),
-		zap.String("addr", cfg.Server.Addr()),
-	)
+	log.Info("starting " + cfg.App.Name + " (" + cfg.App.Environment + ") on " + cfg.Server.Addr())
 
 	connectCtx, connectCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	db, err := database.New(connectCtx, cfg.Database)
@@ -95,7 +91,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("http server listening", zap.String("addr", httpServer.Addr))
+		log.Info("listening on " + httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
@@ -108,7 +104,7 @@ func run() error {
 	case err := <-errCh:
 		return err
 	case sig := <-stop:
-		log.Info("shutdown signal received", zap.String("signal", sig.String()))
+		log.Info("shutdown signal: " + sig.String())
 	}
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeoutDuration())

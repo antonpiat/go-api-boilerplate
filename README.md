@@ -8,6 +8,8 @@ Domain-modular Gin REST API with Postgres, Redis, JWT/RBAC, Zap, Swagger, and Pr
 docker compose up --build
 ```
 
+`docker compose up` prints **API logs only**. Postgres, Redis, and Prometheus still run; inspect them with `docker compose logs postgres` (or `redis` / `prometheus`).
+
 Then open:
 
 | What | URL |
