@@ -24,10 +24,6 @@ func (p Pagination) Offset() int {
 	return (p.Page - 1) * p.PerPage
 }
 
-func (p Pagination) Limit() int {
-	return p.PerPage
-}
-
 type PageMeta struct {
 	Page    int   `json:"page"`
 	PerPage int   `json:"per_page"`

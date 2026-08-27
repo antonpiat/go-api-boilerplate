@@ -44,7 +44,7 @@ func (r *GormRepository) Create(ctx context.Context, u *User) error {
 
 func (r *GormRepository) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	var u User
-	err := r.db.WithContext(ctx).Where("id = ?", id).First(&u).Error
+	err := r.db.WithContext(ctx).Take(&u, id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
 	}
@@ -53,7 +53,7 @@ func (r *GormRepository) GetByID(ctx context.Context, id uuid.UUID) (*User, erro
 
 func (r *GormRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	var u User
-	err := r.db.WithContext(ctx).Where("email = ?", email).First(&u).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).Take(&u).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
 	}
@@ -69,7 +69,16 @@ func (r *GormRepository) List(ctx context.Context, page httpx.Pagination) ([]Use
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	if err := q.Order("created_at DESC").Limit(page.Limit()).Offset(page.Offset()).Find(&users).Error; err != nil {
+	if total == 0 {
+		return []User{}, 0, nil
+	}
+	err := q.Session(&gorm.Session{}).
+		Select("id", "email", "role", "created_at", "updated_at").
+		Order("created_at DESC").
+		Limit(page.PerPage).
+		Offset(page.Offset()).
+		Find(&users).Error
+	if err != nil {
 		return nil, 0, err
 	}
 	return users, total, nil
@@ -84,7 +93,7 @@ func (r *GormRepository) Update(ctx context.Context, u *User) error {
 }
 
 func (r *GormRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	res := r.db.WithContext(ctx).Delete(&User{}, "id = ?", id)
+	res := r.db.WithContext(ctx).Delete(&User{}, id)
 	if res.Error != nil {
 		return res.Error
 	}

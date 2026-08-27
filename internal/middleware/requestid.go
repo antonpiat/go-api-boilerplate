@@ -10,6 +10,10 @@ const RequestIDHeader = "X-Request-ID"
 
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if skipInstrumentation(c) {
+			c.Next()
+			return
+		}
 		id := c.GetHeader(RequestIDHeader)
 		if id == "" {
 			id = uuid.NewString()

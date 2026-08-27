@@ -23,7 +23,7 @@ func Recovery(log *zap.Logger) gin.HandlerFunc {
 
 func MaxBodySize(n int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if n > 0 && c.Request.Body != nil {
+		if n > 0 && c.Request.Body != nil && !skipInstrumentation(c) {
 			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, n)
 		}
 		c.Next()

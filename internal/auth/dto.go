@@ -45,5 +45,4 @@ type TokenClaims struct {
 	Email  string
 	Role   string
 	JTI    string
-	Typ    string
 }

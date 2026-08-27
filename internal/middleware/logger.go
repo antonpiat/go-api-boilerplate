@@ -1,9 +1,10 @@
 package middleware
 
 import (
+	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/antonpiat/go-api-boilerplate/internal/authctx"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -12,6 +13,11 @@ const loggerKey = "logger"
 
 func Logger(base *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if skipInstrumentation(c) {
+			c.Next()
+			return
+		}
+
 		start := time.Now()
 		reqID := GetRequestID(c)
 		reqLogger := base.With(zap.String("request_id", reqID))
@@ -19,20 +25,29 @@ func Logger(base *zap.Logger) gin.HandlerFunc {
 
 		c.Next()
 
-		fields := []zap.Field{
-			zap.Int("status", c.Writer.Status()),
-			zap.String("method", c.Request.Method),
-			zap.String("path", c.Request.URL.Path),
-			zap.String("ip", c.ClientIP()),
-			zap.Duration("latency", time.Since(start)),
+		status := c.Writer.Status()
+		path := c.Request.URL.Path
+		if raw := c.Request.URL.RawQuery; raw != "" {
+			path = path + "?" + raw
 		}
-		if p, ok := authctx.Get(c); ok {
-			fields = append(fields, zap.String("user_id", p.UserID.String()))
+		msg := fmt.Sprintf("%s %s %d %dms",
+			c.Request.Method,
+			path,
+			status,
+			time.Since(start).Milliseconds(),
+		)
+		if len(reqID) >= 8 {
+			msg += " " + reqID[:8]
 		}
-		if len(c.Errors) > 0 {
-			fields = append(fields, zap.String("errors", c.Errors.String()))
+
+		switch {
+		case status >= http.StatusInternalServerError:
+			reqLogger.Error(msg)
+		case status >= http.StatusBadRequest:
+			reqLogger.Warn(msg)
+		default:
+			base.Info(msg)
 		}
-		reqLogger.Info("http request", fields...)
 	}
 }
 
