@@ -1,0 +1,21 @@
+app:
+  name: gin-api
+  environment: development
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+database:
+  host: localhost
+  port: 5432
+  name: gin-api
+  username: root
+  password: root
+
+logging:
+  level: info
+  directory: logs
+  outputs:
+    - console
+    # - file
