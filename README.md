@@ -164,7 +164,7 @@ Add a domain as `internal/<name>` (handler / service / repository) and wire it i
 
 ## Config
 
-`config.yaml` holds defaults. Override secrets and hosts with env vars:
+`config.yml` holds defaults. Override secrets and hosts with env vars:
 
 - `DATABASE_HOST`, `DATABASE_PASSWORD`, `DATABASE_NAME`
 - `REDIS_HOST`, `REDIS_PASSWORD`

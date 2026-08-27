@@ -16,7 +16,7 @@ func TestLoadDefaultsAndEnvOverride(t *testing.T) {
 	t.Setenv("LOG_OUTPUTS", "console,file")
 
 	dir := t.TempDir()
-	path := filepath.Join(dir, "config.yaml")
+	path := filepath.Join(dir, "config.yml")
 	err := os.WriteFile(path, []byte(`
 app:
   name: test-api

@@ -17,7 +17,7 @@ RUN apk add --no-cache ca-certificates curl \
 
 WORKDIR /app
 COPY --from=build /out/server /usr/local/bin/server
-COPY config.yaml /app/config.yaml
+COPY config.yml /app/config.yml
 
 USER app
 EXPOSE 8080

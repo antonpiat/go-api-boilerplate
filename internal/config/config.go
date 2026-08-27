@@ -197,7 +197,7 @@ func Load(path string) (*Config, error) {
 		path = os.Getenv("CONFIG_PATH")
 	}
 	if path == "" {
-		path = "config.yaml"
+		path = "config.yml"
 	}
 
 	cfg := DefaultConfig()
